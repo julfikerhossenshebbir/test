@@ -3,72 +3,100 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DevPush | Remote Deployer</title>
+    <title>DevPush | Coder Workspace</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        body { background: #f4f7f6; font-family: 'Inter', sans-serif; }
-        .auth-card, .dashboard-card { max-width: 500px; margin: 50px auto; background: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); }
-        .dashboard-card { max-width: 900px; }
-        .hidden { display: none; }
-        .code-editor { font-family: 'Fira Code', monospace; background: #1e1e1e; color: #adbac7; height: 300px; }
+        body { background: #f0f2f5; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .hidden { display: none !important; }
+        .auth-container { max-width: 450px; margin: 80px auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 5px 20px rgba(0,0,0,0.08); }
+        .workspace { max-width: 1200px; margin: 30px auto; background: white; border-radius: 12px; box-shadow: 0 5px 20px rgba(0,0,0,0.08); overflow: hidden; }
+        .sidebar { background: #212529; color: white; padding: 20px; min-height: 600px; }
+        .editor-area { padding: 20px; background: #ffffff; }
+        .code-editor { font-family: 'Consolas', monospace; background: #1e1e1e; color: #d4d4d4; height: 450px; border-radius: 8px; padding: 15px; }
+        .file-item { display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.1); padding: 10px; border-radius: 6px; margin-bottom: 8px; color: #fff; text-decoration: none; }
+        .file-item:hover { background: rgba(255,255,255,0.2); color: #0dcaf0; }
+        .badge-status { font-size: 0.85rem; padding: 5px 10px; }
     </style>
 </head>
 <body>
 
-<div id="authSection" class="container">
-    <div class="auth-card">
-        <h3 id="authTitle" class="text-center mb-4">Login</h3>
-        <div id="authAlert" class="alert d-none"></div>
-        
-        <div id="regFields" class="hidden">
-            <input type="text" id="regName" class="form-control mb-2" placeholder="Full Name">
-            <input type="text" id="regPhone" class="form-control mb-2" placeholder="Phone Number">
-            <input type="text" id="regTg" class="form-control mb-2" placeholder="Telegram Username">
-        </div>
-        
-        <input type="email" id="authEmail" class="form-control mb-2" placeholder="Email">
-        <input type="password" id="authPass" class="form-control mb-3" placeholder="Password">
-        
-        <button id="mainBtn" onclick="handleAuth()" class="btn btn-primary w-100 fw-bold">Login</button>
-        <p class="text-center mt-3">
-            <a href="javascript:void(0)" onclick="toggleAuth()">Don't have an account? Register</a>
-        </p>
+<div id="authSection" class="auth-container">
+    <h3 id="authTitle" class="text-center text-primary fw-bold mb-4"><i class="fas fa-code"></i> DevPush</h3>
+    
+    <div id="regFields" class="hidden">
+        <input type="text" id="regName" class="form-control mb-3" placeholder="Full Name">
+        <input type="text" id="regPhone" class="form-control mb-3" placeholder="Phone Number">
+        <input type="text" id="regTg" class="form-control mb-3" placeholder="Telegram (e.g., @username)">
+    </div>
+    
+    <input type="email" id="authEmail" class="form-control mb-3" placeholder="Email Address">
+    <input type="password" id="authPass" class="form-control mb-3" placeholder="Password">
+    
+    <button id="mainBtn" onclick="handleAuth()" class="btn btn-primary w-100 fw-bold py-2 mb-3">Log In</button>
+    <div class="text-center">
+        <a href="javascript:void(0)" onclick="toggleAuth()" class="text-decoration-none text-muted">Create an account instead</a>
     </div>
 </div>
 
-<div id="dashSection" class="container hidden">
-    <div class="dashboard-card">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h4>Welcome, <span id="userName">User</span></h4>
-            <button onclick="logout()" class="btn btn-sm btn-outline-danger">Logout</button>
+<div id="dashSection" class="workspace hidden">
+    <div class="row g-0">
+        
+        <div class="col-md-3 sidebar">
+            <div class="mb-4 text-center">
+                <h5 class="mb-1" id="userName">User</h5>
+                <span id="userStatus" class="badge bg-warning badge-status">Pending</span>
+            </div>
+            
+            <div class="d-grid mb-4">
+                <a href="https://t.me/julfikerhossenshebbir" target="_blank" class="btn btn-outline-info btn-sm">
+                    <i class="fab fa-telegram"></i> Message Admin
+                </a>
+            </div>
+
+            <h6 class="text-uppercase text-muted fw-bold mb-3"><i class="fas fa-folder-open"></i> Your Files</h6>
+            <div id="fileList">
+                </div>
+            
+            <button onclick="logout()" class="btn btn-danger w-100 mt-5"><i class="fas fa-sign-out-alt"></i> Logout</button>
         </div>
 
-        <div class="row">
-            <div class="col-md-4">
-                <div class="list-group mb-3">
-                    <label class="fw-bold mb-1">Deployment Settings</label>
-                    <input type="text" id="fileName" class="form-control mb-2" value="index.html">
-                    <button onclick="fileOp('write')" class="btn btn-success w-100 mb-2">Deploy File</button>
-                    <button onclick="fileOp('delete')" class="btn btn-danger w-100">Delete File</button>
+        <div class="col-md-9 editor-area position-relative">
+            <div id="pendingOverlay" class="position-absolute w-100 h-100 bg-white bg-opacity-75 d-flex justify-content-center align-items-center z-3 hidden">
+                <div class="text-center p-4 bg-white border rounded shadow">
+                    <h4 class="text-danger"><i class="fas fa-lock"></i> Account Not Active</h4>
+                    <p>Please wait for admin approval to upload or edit files.</p>
                 </div>
             </div>
-            <div class="col-md-8">
-                <textarea id="fileContent" class="form-control code-editor" placeholder="Write your HTML/CSS/JS here..."></textarea>
+
+            <div class="d-flex justify-content-between align-items-end mb-3">
+                <div class="w-50">
+                    <label class="form-label fw-bold text-muted">Editing File:</label>
+                    <input type="text" id="fileName" class="form-control" placeholder="e.g., index.html" value="index.html">
+                </div>
+                <div>
+                    <button onclick="fileOp('write')" class="btn btn-success fw-bold px-4"><i class="fas fa-save"></i> Save</button>
+                    <a id="livePreviewBtn" href="#" target="_blank" class="btn btn-primary fw-bold px-4 disabled"><i class="fas fa-external-link-alt"></i> Live View</a>
+                </div>
             </div>
+
+            <textarea id="fileContent" class="form-control code-editor" placeholder=""></textarea>
         </div>
+
     </div>
 </div>
 
 <script>
     const API = 'https://staxteam.com/manager.php';
+    const DOMAIN = 'https://staxteam.com/projects/';
     let isLogin = true;
     let currentUser = null;
 
     function toggleAuth() {
         isLogin = !isLogin;
-        document.getElementById('authTitle').innerText = isLogin ? 'Login' : 'Register';
+        document.getElementById('authTitle').innerHTML = isLogin ? '<i class="fas fa-code"></i> DevPush Login' : '<i class="fas fa-user-plus"></i> Register';
         document.getElementById('regFields').classList.toggle('hidden');
-        document.getElementById('mainBtn').innerText = isLogin ? 'Login' : 'Create Account';
+        document.getElementById('mainBtn').innerText = isLogin ? 'Log In' : 'Sign Up';
     }
 
     async function handleAuth() {
@@ -81,40 +109,100 @@
             telegram: document.getElementById('regTg').value
         };
 
-        const res = await fetch(API, { method: 'POST', body: JSON.stringify(payload) });
-        const data = await res.json();
+        try {
+            const res = await fetch(API, { method: 'POST', body: JSON.stringify(payload) });
+            const data = await res.json();
 
-        if (data.status === 'success') {
-            if (isLogin) {
-                currentUser = data.user;
-                showDashboard();
-            } else {
-                alert(data.message);
-                toggleAuth();
-            }
+            if (data.status === 'success') {
+                if (isLogin) {
+                    currentUser = data.user;
+                    loadDashboard();
+                } else {
+                    alert("Registration successful! Please login.");
+                    toggleAuth();
+                }
+            } else { alert(data.message); }
+        } catch (err) { alert("Network error. Check connection."); }
+    }
+
+    function loadDashboard() {
+        document.getElementById('authSection').classList.add('hidden');
+        document.getElementById('dashSection').classList.remove('hidden');
+        
+        document.getElementById('userName').innerText = currentUser.name;
+        
+        const statusBadge = document.getElementById('userStatus');
+        statusBadge.innerText = currentUser.status.toUpperCase();
+        statusBadge.className = `badge badge-status ${currentUser.status === 'active' ? 'bg-success' : 'bg-warning text-dark'}`;
+
+        if (currentUser.status !== 'active') {
+            document.getElementById('pendingOverlay').classList.remove('hidden');
         } else {
-            alert(data.message);
+            document.getElementById('pendingOverlay').classList.add('hidden');
+            fetchFiles(); // শুধুমাত্র একটিভ হলে ফাইল লিস্ট আনবে
         }
     }
 
-    function showDashboard() {
-        document.getElementById('authSection').classList.add('hidden');
-        document.getElementById('dashSection').classList.remove('hidden');
-        document.getElementById('userName').innerText = currentUser.name;
+    async function fetchFiles() {
+        const res = await fetch(API, { method: 'POST', body: JSON.stringify({ action: 'list_files', userId: currentUser.id }) });
+        const data = await res.json();
+        
+        const listDiv = document.getElementById('fileList');
+        listDiv.innerHTML = '';
+
+        if (data.files && data.files.length > 0) {
+            data.files.forEach(file => {
+                listDiv.innerHTML += `
+                    <div class="file-item">
+                        <span style="cursor:pointer;" onclick="loadFile('${file}')"><i class="fas fa-file-code text-info me-2"></i>${file}</span>
+                        <i class="fas fa-trash text-danger" style="cursor:pointer;" onclick="deleteFile('${file}')" title="Delete"></i>
+                    </div>
+                `;
+            });
+        } else {
+            listDiv.innerHTML = '<p class="text-muted small">No files uploaded yet.</p>';
+        }
+    }
+
+    async function loadFile(fileName) {
+        document.getElementById('fileName').value = fileName;
+        const res = await fetch(API, { method: 'POST', body: JSON.stringify({ action: 'read_file', userId: currentUser.id, fileName: fileName }) });
+        const data = await res.json();
+        
+        if(data.status === 'success') {
+            document.getElementById('fileContent').value = data.content;
+            
+            // লাইভ ভিউ লিংক আপডেট করা
+            const liveBtn = document.getElementById('livePreviewBtn');
+            liveBtn.href = `${DOMAIN}${currentUser.id}/${fileName}`;
+            liveBtn.classList.remove('disabled');
+        }
     }
 
     async function fileOp(operation) {
+        const fName = document.getElementById('fileName').value;
         const payload = {
-            action: 'file_op',
-            operation: operation,
-            userId: currentUser.id,
-            fileName: document.getElementById('fileName').value,
-            content: document.getElementById('fileContent').value
+            action: 'file_op', operation: operation, userId: currentUser.id,
+            fileName: fName, content: document.getElementById('fileContent').value
         };
 
         const res = await fetch(API, { method: 'POST', body: JSON.stringify(payload) });
         const data = await res.json();
         alert(data.message);
+        
+        if (operation === 'write') {
+            const liveBtn = document.getElementById('livePreviewBtn');
+            liveBtn.href = `${DOMAIN}${currentUser.id}/${fName}`;
+            liveBtn.classList.remove('disabled');
+        }
+        fetchFiles(); // তালিকা আপডেট করা
+    }
+
+    function deleteFile(fileName) {
+        if(confirm(`Are you sure you want to delete ${fileName}?`)) {
+            document.getElementById('fileName').value = fileName;
+            fileOp('delete');
+        }
     }
 
     function logout() { location.reload(); }
