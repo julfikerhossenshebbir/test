@@ -3,85 +3,121 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>StaxTeam File Sync</title>
+    <title>DevPush | Remote Deployer</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        body { background-color: #f8f9fa; padding: 30px; }
-        .console-card { max-width: 700px; margin: auto; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 5px 20px rgba(0,0,0,0.05); }
-        .editor { font-family: 'Courier New', monospace; height: 300px; background: #212529; color: #00ff00; }
+        body { background: #f4f7f6; font-family: 'Inter', sans-serif; }
+        .auth-card, .dashboard-card { max-width: 500px; margin: 50px auto; background: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); }
+        .dashboard-card { max-width: 900px; }
+        .hidden { display: none; }
+        .code-editor { font-family: 'Fira Code', monospace; background: #1e1e1e; color: #adbac7; height: 300px; }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <div class="console-card">
-        <h4 class="mb-4 text-center text-primary">File Manager (Vercel to StaxTeam)</h4>
+<div id="authSection" class="container">
+    <div class="auth-card">
+        <h3 id="authTitle" class="text-center mb-4">Login</h3>
+        <div id="authAlert" class="alert d-none"></div>
         
-        <div id="status" class="alert d-none"></div>
+        <div id="regFields" class="hidden">
+            <input type="text" id="regName" class="form-control mb-2" placeholder="Full Name">
+            <input type="text" id="regPhone" class="form-control mb-2" placeholder="Phone Number">
+            <input type="text" id="regTg" class="form-control mb-2" placeholder="Telegram Username">
+        </div>
+        
+        <input type="email" id="authEmail" class="form-control mb-2" placeholder="Email">
+        <input type="password" id="authPass" class="form-control mb-3" placeholder="Password">
+        
+        <button id="mainBtn" onclick="handleAuth()" class="btn btn-primary w-100 fw-bold">Login</button>
+        <p class="text-center mt-3">
+            <a href="javascript:void(0)" onclick="toggleAuth()">Don't have an account? Register</a>
+        </p>
+    </div>
+</div>
 
-        <div class="mb-3">
-            <label class="form-label fw-bold">File Name:</label>
-            <input type="text" id="fileName" class="form-control" value="index.html">
+<div id="dashSection" class="container hidden">
+    <div class="dashboard-card">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h4>Welcome, <span id="userName">User</span></h4>
+            <button onclick="logout()" class="btn btn-sm btn-outline-danger">Logout</button>
         </div>
 
-        <div class="mb-3">
-            <label class="form-label fw-bold">Content:</label>
-            <textarea id="fileContent" class="form-control editor"></textarea>
-        </div>
-
-        <div class="d-flex gap-2">
-            <button onclick="syncFile('write')" id="syncBtn" class="btn btn-primary w-100 fw-bold">Sync to Server</button>
-            <button onclick="confirmDelete()" class="btn btn-outline-danger">Delete</button>
+        <div class="row">
+            <div class="col-md-4">
+                <div class="list-group mb-3">
+                    <label class="fw-bold mb-1">Deployment Settings</label>
+                    <input type="text" id="fileName" class="form-control mb-2" value="index.html">
+                    <button onclick="fileOp('write')" class="btn btn-success w-100 mb-2">Deploy File</button>
+                    <button onclick="fileOp('delete')" class="btn btn-danger w-100">Delete File</button>
+                </div>
+            </div>
+            <div class="col-md-8">
+                <textarea id="fileContent" class="form-control code-editor" placeholder="Write your HTML/CSS/JS here..."></textarea>
+            </div>
         </div>
     </div>
 </div>
 
 <script>
-    const API_URL = 'https://staxteam.com/manager.php';
-    const AUTH_TOKEN = '12345678';
+    const API = 'https://staxteam.com/manager.php';
+    let isLogin = true;
+    let currentUser = null;
 
-    function showStatus(msg, type) {
-        const el = document.getElementById('status');
-        el.className = `alert d-block alert-${type}`;
-        el.innerText = msg;
+    function toggleAuth() {
+        isLogin = !isLogin;
+        document.getElementById('authTitle').innerText = isLogin ? 'Login' : 'Register';
+        document.getElementById('regFields').classList.toggle('hidden');
+        document.getElementById('mainBtn').innerText = isLogin ? 'Login' : 'Create Account';
     }
 
-    async function syncFile(action) {
-        const btn = document.getElementById('syncBtn');
-        const fileName = document.getElementById('fileName').value;
-        const content = document.getElementById('fileContent').value;
+    async function handleAuth() {
+        const payload = {
+            action: isLogin ? 'login' : 'register',
+            email: document.getElementById('authEmail').value,
+            password: document.getElementById('authPass').value,
+            name: document.getElementById('regName').value,
+            phone: document.getElementById('regPhone').value,
+            telegram: document.getElementById('regTg').value
+        };
 
-        btn.disabled = true;
-        btn.innerText = "Connecting...";
+        const res = await fetch(API, { method: 'POST', body: JSON.stringify(payload) });
+        const data = await res.json();
 
-        try {
-            const response = await fetch(API_URL, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': AUTH_TOKEN
-                },
-                body: JSON.stringify({ action, fileName, content })
-            });
-
-            const result = await response.json();
-            if(result.status === 'success') {
-                showStatus(result.message, 'success');
+        if (data.status === 'success') {
+            if (isLogin) {
+                currentUser = data.user;
+                showDashboard();
             } else {
-                showStatus(result.message, 'danger');
+                alert(data.message);
+                toggleAuth();
             }
-        } catch (err) {
-            showStatus("Connection Error: Check CORS settings on manager.php", "danger");
-            console.error(err);
-        } finally {
-            btn.disabled = false;
-            btn.innerText = "Sync to Server";
+        } else {
+            alert(data.message);
         }
     }
 
-    function confirmDelete() {
-        if(confirm("Are you sure you want to delete this file?")) syncFile('delete');
+    function showDashboard() {
+        document.getElementById('authSection').classList.add('hidden');
+        document.getElementById('dashSection').classList.remove('hidden');
+        document.getElementById('userName').innerText = currentUser.name;
     }
+
+    async function fileOp(operation) {
+        const payload = {
+            action: 'file_op',
+            operation: operation,
+            userId: currentUser.id,
+            fileName: document.getElementById('fileName').value,
+            content: document.getElementById('fileContent').value
+        };
+
+        const res = await fetch(API, { method: 'POST', body: JSON.stringify(payload) });
+        const data = await res.json();
+        alert(data.message);
+    }
+
+    function logout() { location.reload(); }
 </script>
 </body>
 </html>
