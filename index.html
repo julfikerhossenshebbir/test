@@ -3,109 +3,124 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DevPush | SaaS Web IDE</title>
+    <title>DevPush | SaaS IDE</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/theme/dracula.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/theme/vscode-dark.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <style>
-        body { background: #1e1e2f; color: #fff; font-family: 'Inter', sans-serif; overflow: hidden; }
+        :root { --bg-dark: #1e1e1e; --bg-sidebar: #252526; --bg-header: #333333; --text-main: #d4d4d4; --text-muted: #858585; --accent: #007acc; }
+        body { background: var(--bg-dark); color: var(--text-main); font-family: 'Segoe UI', system-ui, sans-serif; overflow-x: hidden; }
         .hidden { display: none !important; }
         
-        /* Auth UI */
-        .auth-wrapper { height: 100vh; display: flex; align-items: center; justify-content: center; background: radial-gradient(circle, #2a2a40 0%, #0f0f1a 100%); }
-        .auth-card { background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px); padding: 40px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.1); width: 100%; max-width: 400px; box-shadow: 0 15px 35px rgba(0,0,0,0.5); }
-        .auth-card input { background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); color: white; }
-        .auth-card input:focus { background: rgba(0,0,0,0.4); color: white; box-shadow: none; border-color: #0dcaf0; }
+        /* Auth Card */
+        .auth-wrapper { height: 100vh; display: flex; align-items: center; justify-content: center; }
+        .auth-card { background: var(--bg-sidebar); padding: 40px; border-radius: 12px; border: 1px solid var(--bg-header); width: 90%; max-width: 420px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .auth-card input { background: var(--bg-dark); border: 1px solid var(--bg-header); color: var(--text-main); }
+        .auth-card input:focus { background: #111; color: white; border-color: var(--accent); box-shadow: none; }
         
-        /* IDE UI */
-        .ide-header { background: #151522; padding: 10px 20px; border-bottom: 1px solid #2a2a40; display: flex; justify-content: space-between; align-items: center; }
-        .sidebar { background: #1a1a2e; height: calc(100vh - 60px); padding: 15px; border-right: 1px solid #2a2a40; overflow-y: auto; }
-        .editor-container { height: calc(100vh - 60px); display: flex; flex-direction: column; background: #282a36; }
-        .editor-toolbar { background: #21222c; padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #44475a;}
+        /* Layout */
+        .ide-header { background: var(--bg-header); padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #000; }
+        .sidebar { background: var(--bg-sidebar); height: calc(100vh - 50px); padding: 15px; border-right: 1px solid var(--bg-header); overflow-y: auto; }
+        .editor-container { height: calc(100vh - 50px); display: flex; flex-direction: column; }
+        .editor-toolbar { background: var(--bg-sidebar); padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #000; gap: 10px; flex-wrap: wrap;}
         
         /* CodeMirror */
-        .CodeMirror { height: 100%; flex-grow: 1; font-family: 'Fira Code', monospace; font-size: 15px; }
+        .CodeMirror { height: 100%; flex-grow: 1; font-family: 'Consolas', monospace; font-size: 15px; background: var(--bg-dark) !important;}
         
         /* Lists */
-        .section-title { font-size: 0.75rem; font-weight: bold; color: #6c757d; text-transform: uppercase; margin-top: 15px; margin-bottom: 10px; letter-spacing: 1px;}
-        .list-item { padding: 8px 10px; border-radius: 6px; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: space-between; color: #a1a1aa; margin-bottom: 4px; font-size: 0.9rem;}
-        .list-item:hover, .list-item.active { background: #2a2a40; color: #fff; }
-        .list-item.active { border-left: 3px solid #0dcaf0; }
-        .item-icon { margin-right: 8px; width: 18px; text-align: center; }
-        .folder-path { font-size: 0.75rem; color: #6c757d; }
+        .section-title { font-size: 0.75rem; font-weight: bold; color: var(--text-muted); text-transform: uppercase; margin: 15px 0 10px 0; letter-spacing: 1px;}
+        .list-item { padding: 8px 10px; border-radius: 4px; cursor: pointer; display: flex; align-items: center; justify-content: space-between; color: var(--text-main); font-size: 0.9rem; margin-bottom: 4px;}
+        .list-item:hover { background: #2a2d2e; }
+        .list-item.active { background: #37373d; border-left: 3px solid var(--accent); }
+        .action-icons i { margin-left: 10px; opacity: 0.6; transition: 0.2s; }
+        .action-icons i:hover { opacity: 1; color: white; }
+        
+        /* Mobile Specific */
+        @media (max-width: 768px) {
+            .sidebar { position: fixed; z-index: 1000; left: -100%; transition: 0.3s; width: 280px; box-shadow: 5px 0 15px rgba(0,0,0,0.5); }
+            .sidebar.open { left: 0; }
+            .mobile-overlay { display: none; position: fixed; top:0; left:0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 999; }
+            .mobile-overlay.open { display: block; }
+            .editor-toolbar input { width: 100% !important; max-width: 100% !important; margin-bottom: 10px;}
+            .toolbar-actions { width: 100%; display: flex; justify-content: space-between;}
+        }
     </style>
 </head>
 <body>
 
-<div id="authSection" class="auth-wrapper">
+<div id="authSection" class="auth-wrapper hidden">
     <div class="auth-card text-center">
-        <h3 class="fw-bold text-info mb-4" id="authTitle"><i class="fas fa-laptop-code"></i> DevPush</h3>
-        
+        <h3 class="fw-bold mb-4" style="color: var(--accent);"><i class="fas fa-code"></i> DevPush</h3>
         <div id="regFields" class="hidden">
             <input type="text" id="regName" class="form-control mb-3 py-2" placeholder="Full Name">
             <input type="text" id="regPhone" class="form-control mb-3 py-2" placeholder="Phone Number">
             <input type="text" id="regTg" class="form-control mb-3 py-2" placeholder="Telegram (@username)">
         </div>
-        
         <input type="email" id="authEmail" class="form-control mb-3 py-2" placeholder="Email Address">
         <input type="password" id="authPass" class="form-control mb-4 py-2" placeholder="Password">
         
-        <button onclick="handleAuth()" id="mainBtn" class="btn btn-info w-100 fw-bold py-2 mb-3">Log In</button>
-        <a href="javascript:void(0)" onclick="toggleAuth()" class="text-secondary text-decoration-none">Need an account? Sign up</a>
+        <button onclick="handleAuth()" id="mainBtn" class="btn w-100 fw-bold py-2 mb-3" style="background: var(--accent); color: white;">Log In</button>
+        <a href="javascript:void(0)" onclick="toggleAuth()" class="text-decoration-none" style="color: var(--text-muted);">Create new account</a>
     </div>
 </div>
 
 <div id="dashSection" class="hidden">
     <div class="ide-header">
-        <div class="fw-bold text-info"><i class="fas fa-code me-2"></i>DevPush <span class="text-light fw-normal fs-6 ms-2" id="headerProjectName"></span></div>
+        <div class="d-flex align-items-center">
+            <button class="btn btn-sm btn-outline-secondary text-white me-3 d-md-none border-0" onclick="toggleSidebar()"><i class="fas fa-bars fa-lg"></i></button>
+            <div class="fw-bold fs-5" style="color: var(--accent);"><i class="fas fa-laptop-code me-2"></i>DevPush <span class="text-white fw-normal ms-2 fs-6" id="headerProjectName"></span></div>
+        </div>
         <div>
-            <span class="badge bg-dark border me-3" id="userStatus">Pending</span>
-            <span class="me-3"><i class="fas fa-user-circle"></i> <span id="userName">User</span></span>
-            <button onclick="logout()" class="btn btn-sm btn-outline-danger"><i class="fas fa-power-off"></i></button>
+            <span class="badge bg-dark border border-secondary me-2 d-none d-sm-inline" id="userStatus">Pending</span>
+            <span class="me-3 d-none d-sm-inline"><i class="fas fa-user-circle"></i> <span id="userName">User</span></span>
+            <button onclick="logout()" class="btn btn-sm btn-outline-danger border-0" title="Logout"><i class="fas fa-sign-out-alt fa-lg"></i></button>
         </div>
     </div>
 
-    <div class="row g-0">
-        <div class="col-md-3 sidebar">
-            <div class="d-flex justify-content-between align-items-center">
-                <div class="section-title">Your Projects (<span id="projectCount">0</span>/5)</div>
-                <button onclick="createProject()" class="btn btn-sm btn-outline-info p-0 px-2" title="New Project"><i class="fas fa-plus"></i></button>
-            </div>
-            <div id="projectList" class="mb-4 border-bottom border-secondary pb-3"></div>
+    <div class="row g-0 position-relative">
+        <div class="mobile-overlay" id="mobileOverlay" onclick="toggleSidebar()"></div>
+        
+        <div class="col-md-3 sidebar" id="sidebar">
+            <a href="https://t.me/julfikerhossenshebbir" target="_blank" class="btn btn-sm w-100 fw-bold mb-3" style="background: var(--accent); color: white;">
+                <i class="fab fa-telegram"></i> Message Admin
+            </a>
             
             <div class="d-flex justify-content-between align-items-center">
-                <div class="section-title">Explorer</div>
+                <div class="section-title">Global Projects (<span id="projectCount">0</span>/5)</div>
+                <button onclick="createProject()" class="btn btn-sm btn-outline-secondary p-0 px-2 text-white border-0" title="Create Project"><i class="fas fa-plus"></i></button>
+            </div>
+            <div id="projectList" class="mb-3 border-bottom border-dark pb-2"></div>
+            
+            <div class="d-flex justify-content-between align-items-center">
+                <div class="section-title">Files & Folders</div>
                 <div>
-                    <button onclick="createNewFolder()" class="btn btn-sm btn-outline-warning p-0 px-2" title="New Folder" id="btnNewFolder" disabled><i class="fas fa-folder-plus"></i></button>
-                    <button onclick="createNewFile()" class="btn btn-sm btn-outline-success p-0 px-2" title="New File" id="btnNewFile" disabled><i class="fas fa-file-medical"></i></button>
+                    <button onclick="createNewFolder()" class="btn btn-sm btn-outline-secondary p-0 px-2 text-white border-0" title="New Folder" id="btnNewFolder" disabled><i class="fas fa-folder-plus"></i></button>
+                    <button onclick="createNewFile()" class="btn btn-sm btn-outline-secondary p-0 px-2 text-white border-0" title="New File" id="btnNewFile" disabled><i class="fas fa-file-medical"></i></button>
                 </div>
             </div>
-            <div id="fileList">
-                <div class="text-center text-muted small mt-3">Select a project to view files.</div>
-            </div>
+            <div id="fileList"><div class="text-muted small mt-2">Select a project first.</div></div>
         </div>
 
         <div class="col-md-9 editor-container position-relative">
-            <div id="pendingOverlay" class="position-absolute w-100 h-100 d-flex justify-content-center align-items-center z-3" style="background: rgba(0,0,0,0.8); backdrop-filter: blur(5px);">
-                <div class="text-center p-5 bg-dark border border-secondary rounded-4 shadow-lg">
-                    <i class="fas fa-lock text-warning fa-3x mb-3"></i>
-                    <h3 class="text-white">Account Locked</h3>
-                    <p class="text-secondary mb-4">Admin approval is required.</p>
-                    <a href="https://t.me/julfikerhossenshebbir" target="_blank" class="btn btn-warning fw-bold text-dark">Contact Admin Now</a>
+            <div id="pendingOverlay" class="position-absolute w-100 h-100 d-flex justify-content-center align-items-center z-3 hidden" style="background: rgba(30,30,30,0.9);">
+                <div class="text-center p-4 border border-secondary rounded shadow">
+                    <i class="fas fa-lock text-warning fa-2x mb-3"></i>
+                    <h5 class="text-white">Account Not Approved</h5>
+                    <p class="text-muted small">Please contact admin to activate your workspace.</p>
                 </div>
             </div>
 
             <div class="editor-toolbar">
-                <div class="d-flex align-items-center w-50">
-                    <i class="fas fa-file-code text-info me-2"></i>
-                    <input type="text" id="fileName" class="form-control form-control-sm bg-dark text-white border-secondary" placeholder="e.g. css/style.css" style="max-width: 300px;">
+                <div class="d-flex align-items-center w-50" style="min-width: 250px;">
+                    <i class="fas fa-file-code text-info me-2 d-none d-md-block"></i>
+                    <input type="text" id="fileName" class="form-control form-control-sm bg-dark text-white border-secondary" placeholder="e.g. css/style.css">
                 </div>
-                <div>
-                    <a id="livePreviewBtn" href="#" target="_blank" class="btn btn-sm btn-outline-light me-2 disabled"><i class="fas fa-external-link-alt"></i> Live Site</a>
-                    <button onclick="saveFile()" class="btn btn-sm btn-success fw-bold px-3"><i class="fas fa-save"></i> Save</button>
+                <div class="toolbar-actions d-flex gap-2">
+                    <a id="livePreviewBtn" href="#" target="_blank" class="btn btn-sm btn-outline-secondary text-white disabled flex-grow-1"><i class="fas fa-external-link-alt"></i> Live View</a>
+                    <button onclick="saveFile()" class="btn btn-sm fw-bold px-4 flex-grow-1" style="background: var(--accent); color: white;"><i class="fas fa-save"></i> Save File</button>
                 </div>
             </div>
             <textarea id="codeEditorArea"></textarea>
@@ -121,23 +136,45 @@
 
 <script>
     const API = 'https://staxteam.com/manager.php';
-    const DOMAIN = 'https://staxteam.com/projects/';
+    // Changed Domain to Root!
+    const DOMAIN = 'https://staxteam.com/'; 
     let isLogin = true;
     let currentUser = null;
     let activeProject = null;
     let editor;
 
     window.onload = function() {
+        // Initialize Eye-friendly VS Code Theme
         editor = CodeMirror.fromTextArea(document.getElementById("codeEditorArea"), {
-            mode: "htmlmixed", theme: "dracula", lineNumbers: true, autoCloseTags: true, indentUnit: 4
+            mode: "htmlmixed", theme: "vscode-dark", lineNumbers: true, autoCloseTags: true, indentUnit: 4
         });
+
+        // Auto-save Draft feature (prevents data loss on reload)
+        editor.on("change", function() {
+            localStorage.setItem("devPushDraft", editor.getValue());
+            localStorage.setItem("devPushDraftFile", document.getElementById("fileName").value);
+        });
+
+        // Persist Login
+        const savedUser = localStorage.getItem("devPushUser");
+        if (savedUser) {
+            currentUser = JSON.parse(savedUser);
+            activeProject = localStorage.getItem("devPushActiveProj");
+            loadDashboard();
+        } else {
+            document.getElementById('authSection').classList.remove('hidden');
+        }
     };
+
+    function toggleSidebar() {
+        document.getElementById('sidebar').classList.toggle('open');
+        document.getElementById('mobileOverlay').classList.toggle('open');
+    }
 
     function toggleAuth() {
         isLogin = !isLogin;
-        document.getElementById('authTitle').innerHTML = isLogin ? '<i class="fas fa-laptop-code"></i> DevPush' : '<i class="fas fa-user-plus"></i> Register';
         document.getElementById('regFields').classList.toggle('hidden');
-        document.getElementById('mainBtn').innerText = isLogin ? 'Log In' : 'Create Account';
+        document.getElementById('mainBtn').innerText = isLogin ? 'Log In' : 'Sign Up';
     }
 
     async function apiCall(payload) {
@@ -147,28 +184,22 @@
 
     async function handleAuth() {
         const payload = {
-            action: isLogin ? 'login' : 'register',
-            email: document.getElementById('authEmail').value,
-            password: document.getElementById('authPass').value,
-            name: document.getElementById('regName').value,
-            phone: document.getElementById('regPhone').value,
-            telegram: document.getElementById('regTg').value
+            action: isLogin ? 'login' : 'register', email: document.getElementById('authEmail').value,
+            password: document.getElementById('authPass').value, name: document.getElementById('regName').value,
+            phone: document.getElementById('regPhone').value, telegram: document.getElementById('regTg').value
         };
-
-        const Toast = Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 3000 });
-
         try {
             const data = await apiCall(payload);
             if (data.status === 'success') {
                 if (isLogin) {
                     currentUser = data.user;
+                    localStorage.setItem("devPushUser", JSON.stringify(currentUser)); // Save Session
                     loadDashboard();
-                    Toast.fire({ icon: 'success', title: 'Signed in successfully' });
                 } else {
-                    Swal.fire('Registered!', 'Wait for admin approval.', 'success');
+                    Swal.fire('Success', 'Account created! Please wait for admin approval.', 'success');
                     toggleAuth();
                 }
-            } else { Swal.fire('Error', data.message, 'error'); }
+            } else Swal.fire('Error', data.message, 'error');
         } catch (err) { Swal.fire('Error', 'Network connection failed!', 'error'); }
     }
 
@@ -181,17 +212,25 @@
         statusEl.innerText = currentUser.status.toUpperCase();
         
         if (currentUser.status === 'active') {
-            statusEl.className = "badge bg-success border border-success me-3";
+            statusEl.className = "badge bg-success border border-success me-2 d-none d-sm-inline";
             document.getElementById('pendingOverlay').classList.add('hidden');
             loadProjects();
+            
+            // Restore Draft Code if Page Reloaded
+            const draft = localStorage.getItem("devPushDraft");
+            const draftFile = localStorage.getItem("devPushDraftFile");
+            if (draft && draftFile) {
+                document.getElementById("fileName").value = draftFile;
+                editor.setValue(draft);
+            }
             setTimeout(() => editor.refresh(), 200);
         } else {
-            statusEl.className = "badge bg-warning text-dark border border-warning me-3";
+            statusEl.className = "badge bg-warning text-dark border border-warning me-2 d-none d-sm-inline";
             document.getElementById('pendingOverlay').classList.remove('hidden');
         }
     }
 
-    // --- Project Management ---
+    // --- Projects ---
     async function loadProjects() {
         const data = await apiCall({ action: 'list_projects', userId: currentUser.id });
         if(data.status === 'success') {
@@ -200,60 +239,65 @@
             
             const listDiv = document.getElementById('projectList');
             listDiv.innerHTML = '';
-            
             currentUser.projects.forEach(proj => {
                 const isActive = activeProject === proj ? 'active' : '';
                 listDiv.innerHTML += `
                     <div class="list-item ${isActive}" onclick="selectProject('${proj}')">
-                        <div><i class="fas fa-globe item-icon text-primary"></i> ${proj}</div>
-                    </div>
-                `;
+                        <div><i class="fas fa-globe text-info me-2"></i> ${proj}</div>
+                        <div class="action-icons">
+                            <i class="fas fa-trash text-danger" onclick="event.stopPropagation(); deleteProject('${proj}')" title="Delete Project"></i>
+                        </div>
+                    </div>`;
             });
+            if(activeProject && currentUser.projects.includes(activeProject)) selectProject(activeProject);
         }
     }
 
     async function createProject() {
-        if(currentUser.projects.length >= 5) return Swal.fire('Limit Reached', 'You can only have 5 projects max.', 'warning');
-        
-        const { value: projName } = await Swal.fire({
-            title: 'New Project',
-            input: 'text',
-            inputLabel: 'Project Name (e.g. my-portfolio)',
-            inputPlaceholder: 'Only letters, numbers, and dashes',
-            showCancelButton: true
+        if(currentUser.projects.length >= 5) return Swal.fire('Limit Reached', 'You can create a maximum of 5 projects.', 'warning');
+        const { value: projName } = await Swal.fire({ 
+            title: 'New Project (Global URL)', 
+            html: 'Your URL will be: <br><b>staxteam.com/project-name</b>',
+            input: 'text', 
+            inputPlaceholder: 'my-portfolio',
+            showCancelButton: true 
         });
-
         if (projName) {
             const data = await apiCall({ action: 'create_project', userId: currentUser.id, projectName: projName });
-            if(data.status === 'success') {
-                Swal.fire('Created!', data.message, 'success');
-                loadProjects();
-            } else { Swal.fire('Error', data.message, 'error'); }
+            if(data.status === 'success') loadProjects(); else Swal.fire('Error', data.message, 'error');
         }
+    }
+
+    function deleteProject(projName) {
+        Swal.fire({ title: 'Delete entire project?', text: "All files will be lost!", icon: 'warning', showCancelButton: true, confirmButtonColor: '#d33' })
+        .then(async (result) => {
+            if (result.isConfirmed) {
+                const data = await apiCall({ action: 'delete_project', userId: currentUser.id, projectName: projName });
+                if(data.status === 'success') {
+                    if(activeProject === projName) { activeProject = null; localStorage.removeItem("devPushActiveProj"); }
+                    loadProjects(); fetchFiles();
+                }
+            }
+        });
     }
 
     function selectProject(projName) {
         activeProject = projName;
+        localStorage.setItem("devPushActiveProj", projName);
         document.getElementById('headerProjectName').innerText = `[ ${projName} ]`;
         
-        const liveBtn = document.getElementById('livePreviewBtn');
-        liveBtn.href = `${DOMAIN}${projName}/`;
-        liveBtn.classList.remove('disabled');
-
+        // Root Domain Link
+        document.getElementById('livePreviewBtn').href = `${DOMAIN}${projName}/`;
+        document.getElementById('livePreviewBtn').classList.remove('disabled');
+        
         document.getElementById('btnNewFolder').disabled = false;
         document.getElementById('btnNewFile').disabled = false;
-        
-        loadProjects(); // Re-render to show active state
-        fetchFiles();
-        
-        // Reset editor
-        document.getElementById('fileName').value = 'index.html';
-        loadFile('index.html');
+        loadProjects(); fetchFiles();
     }
 
-    // --- File Management ---
+    // --- Files ---
     async function fetchFiles() {
-        if(!activeProject) return;
+        if(!activeProject) { document.getElementById('fileList').innerHTML = ''; return; }
         const data = await apiCall({ action: 'list_files', userId: currentUser.id, projectName: activeProject });
         const listDiv = document.getElementById('fileList');
         listDiv.innerHTML = '';
@@ -263,82 +307,79 @@
                 let icon = file.endsWith('.css') ? 'fab fa-css3-alt text-info' : file.endsWith('.js') ? 'fab fa-js text-warning' : 'fab fa-html5 text-danger';
                 listDiv.innerHTML += `
                     <div class="list-item" onclick="loadFile('${file}')">
-                        <div><i class="${icon} item-icon"></i> ${file.split('/').pop()} <span class="folder-path d-block">${file}</span></div>
-                        <i class="fas fa-trash text-secondary" onclick="event.stopPropagation(); deleteFile('${file}')" title="Delete"></i>
-                    </div>
-                `;
+                        <div style="word-break: break-all; font-size: 0.85rem;"><i class="${icon} me-2"></i> ${file}</div>
+                        <div class="action-icons">
+                            <i class="fas fa-edit text-warning" onclick="event.stopPropagation(); renameFile('${file}')" title="Rename"></i>
+                            <i class="fas fa-trash text-danger" onclick="event.stopPropagation(); deleteFile('${file}')" title="Delete"></i>
+                        </div>
+                    </div>`;
             });
         } else {
-            listDiv.innerHTML = '<p class="text-secondary small fst-italic">No files found.</p>';
+            listDiv.innerHTML = '<p class="text-secondary small mt-2">No files. Create one.</p>';
+        }
+    }
+
+    async function renameFile(oldName) {
+        const { value: newName } = await Swal.fire({ title: 'Rename File/Folder', input: 'text', inputValue: oldName, showCancelButton: true });
+        if (newName && newName !== oldName) {
+            const data = await apiCall({ action: 'rename_file', userId: currentUser.id, projectName: activeProject, oldName: oldName, newName: newName });
+            if(data.status === 'success') fetchFiles(); else Swal.fire('Error', data.message, 'error');
         }
     }
 
     async function createNewFolder() {
-        const { value: folderName } = await Swal.fire({
-            title: 'New Folder', input: 'text', inputPlaceholder: 'e.g. css or assets/img', showCancelButton: true
-        });
+        const { value: folderName } = await Swal.fire({ title: 'New Folder', input: 'text', inputPlaceholder: 'e.g. assets/css', showCancelButton: true });
         if (folderName) {
             const data = await apiCall({ action: 'create_folder', userId: currentUser.id, projectName: activeProject, folderName: folderName });
-            if(data.status === 'success') {
-                Swal.fire({ position: 'top-end', icon: 'success', title: data.message, showConfirmButton: false, timer: 1500 });
-                fetchFiles();
-            } else { Swal.fire('Error', data.message, 'error'); }
+            if(data.status === 'success') fetchFiles(); else Swal.fire('Error', data.message, 'error');
         }
     }
 
     function createNewFile() {
-        document.getElementById('fileName').value = "new_folder/new_file.html";
+        document.getElementById('fileName').value = "new_file.html";
         editor.setValue("\n");
         editor.setOption("mode", "htmlmixed");
     }
 
     async function loadFile(fileName) {
         document.getElementById('fileName').value = fileName;
-        let mode = "htmlmixed";
-        if(fileName.endsWith('.css')) mode = "css";
-        if(fileName.endsWith('.js')) mode = "javascript";
+        let mode = "htmlmixed"; if(fileName.endsWith('.css')) mode = "css"; if(fileName.endsWith('.js')) mode = "javascript";
         editor.setOption("mode", mode);
 
         const data = await apiCall({ action: 'read_file', userId: currentUser.id, projectName: activeProject, fileName: fileName });
-        if(data.status === 'success') editor.setValue(data.content);
+        if(data.status === 'success') {
+            editor.setValue(data.content);
+            localStorage.setItem("devPushDraft", data.content); // Prevent draft from overriding next time
+            if(window.innerWidth <= 768) toggleSidebar(); // Close sidebar on mobile
+        }
     }
 
     async function saveFile() {
-        if(!activeProject) return Swal.fire('Warning', 'Select a project first', 'warning');
+        if(!activeProject) return Swal.fire('Warning', 'Select a project', 'warning');
         const fName = document.getElementById('fileName').value;
-        if(!fName) return Swal.fire('Warning', 'File name cannot be empty', 'warning');
-
-        const payload = {
-            action: 'file_op', operation: 'write', userId: currentUser.id, projectName: activeProject,
-            fileName: fName, content: editor.getValue()
-        };
-
-        const data = await apiCall(payload);
+        
+        const data = await apiCall({ action: 'file_op', operation: 'write', userId: currentUser.id, projectName: activeProject, fileName: fName, content: editor.getValue() });
         if(data.status === 'success') {
-            Swal.fire({ position: 'top-end', icon: 'success', title: data.message, showConfirmButton: false, timer: 1500 });
+            Swal.fire({ position: 'top-end', icon: 'success', title: 'File Saved!', showConfirmButton: false, timer: 1000 });
+            localStorage.removeItem("devPushDraft"); // Clear draft after save
             fetchFiles();
-        } else { Swal.fire('Error', data.message, 'error'); }
+        } else Swal.fire('Error', data.message, 'error');
     }
 
     function deleteFile(fileName) {
-        Swal.fire({
-            title: 'Are you sure?', text: `Delete ${fileName}?`, icon: 'warning',
-            showCancelButton: true, confirmButtonColor: '#d33', confirmButtonText: 'Yes, delete it!'
-        }).then((result) => {
+        Swal.fire({ title: 'Delete file?', text: fileName, icon: 'warning', showCancelButton: true, confirmButtonColor: '#d33' })
+        .then((result) => {
             if (result.isConfirmed) {
                 apiCall({ action: 'file_op', operation: 'delete', userId: currentUser.id, projectName: activeProject, fileName: fileName })
-                .then(data => {
-                    Swal.fire('Deleted!', data.message, 'success');
-                    if(document.getElementById('fileName').value === fileName) {
-                        document.getElementById('fileName').value = ''; editor.setValue('');
-                    }
-                    fetchFiles();
-                });
+                .then(data => { if(data.status === 'success') fetchFiles(); });
             }
         });
     }
 
-    function logout() { location.reload(); }
+    function logout() {
+        localStorage.clear();
+        location.reload();
+    }
 </script>
 </body>
 </html>
